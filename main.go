@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
-	"sync"
 	"time"
 )
 
@@ -13,27 +12,25 @@ var url = "https://www.qb5.tw/book_114945/%s.html"
 func main() {
 	startTime := time.Now()
 
-	var wg sync.WaitGroup
-	wg.Add(100)
-
 	start := 47119721
 	end := 47119721 + 100
 
+	ch := make(chan int)
 	for i := start; i < end; i++ {
-		go func(j int) {
-			defer wg.Done()
-			run(j)
-		}(i)
+		go run(i, ch)
 	}
 
-	wg.Wait()
+	for i := start; i < end; i++ {
+		n := <-ch
+		fmt.Println("n: ", n)
+	}
 
 	elapsed := time.Since(startTime)
 
 	fmt.Println("elapsed: ", elapsed)
 }
 
-func run(page int) {
+func run(page int, ch chan int) {
 	data, err := getData(fmt.Sprintf(url, strconv.Itoa(page)))
 	if err != nil {
 		fmt.Println("err: ", err)
@@ -46,7 +43,9 @@ func run(page int) {
 		return
 	}
 
-	writeFileLine("E:\\gowwwroot\\xu\\spider\\cont.txt", title)
+	writeFileLine("D:\\goworkspace\\go-spider\\cont.txt", title)
+
+	ch <- page
 }
 
 func getData(reqURL string) ([]byte, error) {
